@@ -1,22 +1,20 @@
+# PVPGN 2.x DEVELOPERS GUIDE
 
-		    PVPGN 2.x DEVELOPERS GUIDE
+Please read this file before asking any questions !
 
-           Please read this file before asking any questions !
+## 0. About this document
 
-0. About this document
-=======================
 
 This document is intended to be read by all of you out there wanting to do
 development or testing for/on PvPGN.
 
-1. Why ?
-=========
+## 1. Why ?
+
 
 You want to start coding for PvPGN ? Why ? What do you expect to get from it ?
 Answer yourself this questions and then go to the next paragraph.
 
-2. History
-===========
+## 2. History
 
 PvPGN has started as a game server emulation project, taking the excelent's
 bnetd project source and working on it. While initially it has started as
@@ -31,8 +29,7 @@ on the new code of course we may name them different).
 Arround the time of pvpgn 1.7.9 release we have branched the codes and started 
 to work on pvpgn 2.x, the next big version, a C++ based version.
 
-3. Objective
-=============
+## 3. Objective
 
 PvPGN's main objective is to support many gaming network protocols so that 
 users can setup LAN parties and Internet gaming communities. As such it 
@@ -46,10 +43,10 @@ PvPGN using non-gaming related protocols like IRC and telnet for better
 interoperability regarding the chat feature of the server (one of the main 
 features as a gaming server).
 
-4. Layout of files
-===================
+## 4. Layout of files
 
-Note: Starting here on you may find lots of terms and wors which may sound
+
+> Note: Starting here on you may find lots of terms and wors which may sound
 "strange" to you and for this reason we have included a glossary of terms
 in the end of this file.
 
@@ -73,10 +70,9 @@ PvPGN uses automake/autoconf build and platform portability system. This is
 the main build method for UNIX/POSIX builds. For Win32 we offer the option to 
 build using mingw tools.
 
-5. Coding Style
-================
+## 5. Coding Style
 
-a. General
+### a. General
 
 Because PvPGN is developed mainly on POSIX/Linux systems there are some 
 things specific to this type of platform (like the line ending of all 
@@ -117,7 +113,7 @@ To allocate/free memory use ONLY new/delete calls (this makes sure that out
 of memory condition is detected and nicely handled because in that case 
 "new" automatically "throws" std::bad_alloc exception).
 
-b. Indenting
+### b. Indenting
 
 PvPGN indentation should be done ONLY with "tabs" (exception see below), the 
 tab size is 8 "spaces".
@@ -203,7 +199,7 @@ throwing an exception to be caught with reference, you throw like
 throw MyException(); whcih means it creates a temporary object MyException() 
 and that object reference is passed to the handlers)
 
-e. Namespaces
+## e. Namespaces
 
 All pvpgn codes will belong to the "pvpgn" namespace. Specific application 
 codes will belong to a namespace inside "pvpgn" like "pvpgn::bnetd". Common 
@@ -231,6 +227,7 @@ extern int externfunc()
 static int myfunc()
 {
 }
+
 ------------------------
 
 Make it
@@ -258,7 +255,7 @@ int myfunc(int)
 }
 ------------------------
 
-f. Identifiers
+### f. Identifiers
 
 Class names should start with a capital and all words composing it should too
 (Java-like style, like in "MyStuff"). All methods should start with a lowercase 
@@ -280,8 +277,8 @@ h. Code Flow
 
 <to be written, not sure how it will be after the complete C++ conversion>
 
-Appendix A. Glossary of terms
-===============================
+## Appendix A. Glossary of terms
+
 
 * autoupdate: the feature of Battle.Net servers to send a (MPQ, see MPQ) file
 to the client which after downloading it, it is used to update the client
@@ -300,15 +297,15 @@ verification system used by Battle.Net servers to identify client version and
 "purity". Based on this the server may accept/refuse connection or ask for 
 upgrade (see autoupdate).
 
-Appendix B. How to run PvPGN for debugging
-===========================================
+## Appendix B. How to run PvPGN for debugging
+
 
 It is very helpfull in finding out memory coruption bugs as soon as possible 
 so while developing codes or just when running a server it is good that you 
 use some memory coruption run-time debuggers. I dont know about Win32 users 
 but on Unix/Linux there are some good options.
 
-1. valgrind (http://valgrind.kde.org)
+### 1. valgrind (http://valgrind.kde.org)
 
 Valgrind is not very portable (only x86, Linux and very recently FreeBSD), 
 also it slows down the debugged codes (it acts like a CPU emulator so it 
@@ -339,13 +336,12 @@ valgrind cannot find (yes, valgrind is superb but there is a class of bugs,
 especially overflows which valgrind can't help you with) you should then try 
 the next debugging tool.
 
-2. Deleaker (http://deleaker.com)
+### 2. Deleaker (http://deleaker.com)
 
 For developers on Windows and uses Visual Studio, Deleaker is an extension for Visual Studio that helps you detect and localize resource leaks in memory, GDI and USER objects, handles. It integrates into Visual Studio's debugging functionality and displays useful information to trace leaks back to their source code.
 Deleaker also comes with a standalone program for developers using other compilers.
 
-Appendix C. How to generate and use "core" files
-=================================================
+## Appendix C. How to generate and use "core" files
 
 This appendix is for Unix users. I dont know if other platforms have similar 
 features, that when the program crashes unexpectedly the OS would dump the 

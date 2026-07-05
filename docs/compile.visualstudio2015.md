@@ -1,5 +1,5 @@
 # A step-by-step guide for building PvPGN using Visual Studio 2015
----
+
 
 ##### Requirements
 - [Visual Studio 2015 Community](https://www.visualstudio.com/products/visual-studio-community-vs)
@@ -14,7 +14,7 @@
 ---
 
 ##### Instructions
-- Install *Visual Studio 2015*
+- Install *Visual Studio 2022*
 - Install *CMake*
 - Download zlib
 - Download PvPGN source

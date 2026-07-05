@@ -1,13 +1,14 @@
-	PvPGN Abstract socket event notification API ie fdwatch
-	    v.01 (C) 2003 Dizzy <>
+# PvPGN Abstract socket event notification API ie fdwatch
+v.01 (C) 2003 Dizzy
 
 
-1. The problem:
+## 1. The problem:
 
-    I wanted to design and implement a general API to have PvPGN inspect
+ I wanted to design and implement a general API to have PvPGN inspect
 socket status (read/write availability) in the best possible way that the
 host OS may offer (select()/poll()/kqueue()/epoll()/etc..).
-    Also the old PvPGN code to do such things was doing them in a very 
+ 
+Also the old PvPGN code to do such things was doing them in a very 
 slow way, especially if the system was using poll() (which was the default
 with most Unices). When the server started to have lots of active connections 
 the CPU used in PvPGN to inspect and handle them was increasing very much (the
@@ -15,75 +16,56 @@ code complexity of the code executed each main loop run was of O(n^2) complexity
 where n is the number of connections to the server, and the main loop is cycling
 at least 1000/BNETD_POLL_INTERVAL times per second ie at least 50 times per second).
 
-2. The fdwatch API:
+## 2. The fdwatch API:
 
-    I started by reading the fdwatch code from the thttpd project, I used the 
-ideeas found on that code as a start point, but I got much far from those :).
-    The fdwatch API is described in fdwatch.h as follows:
+I started by reading the fdwatch code from the thttpd project, I used the 
+ideas found on that code as a start point, but I got much far from those :).
+The fdwatch API is described in fdwatch.h as follows:
 
-extern int fdwatch_init(void);
-extern int fdwatch_close(void);
-extern int fdwatch_add_fd(int fd, t_fdwatch_type rw, fdwatch_handler h, void *data);
-extern int fdwatch_update_fd(int fd, t_fdwatch_type rw);
-extern int fdwatch_del_fd(int fd);
-extern int fdwatch(long timeout_msecs);
-extern int fdwatch_check_fd(int fd, t_fdwatch_type rw);
-extern void fdwatch_handle(void);
+    extern int fdwatch_init(void);
+    extern int fdwatch_close(void);
+    extern int fdwatch_add_fd(int fd, t_fdwatch_type rw, fdwatch_handler h, void *data);
+    extern int fdwatch_update_fd(int fd, t_fdwatch_type rw);
+    extern int fdwatch_del_fd(int fd);
+    extern int fdwatch(long timeout_msecs);
+    extern int fdwatch_check_fd(int fd, t_fdwatch_type rw);
+    extern void fdwatch_handle(void);
 
-    The name of the functions should be self explanatory to what those functions
+The name of the functions should be self explanatory to what those functions
 do.
 
-3. The changed code flow:
-A. the code flow before fdwatch
-    - main() calls server_process() 
-    - server_process() after doing some single time initializations, entered
-    the main loop
-    - in the main loop after handing the events it starts to prepare the sockets
-    for select/poll
-    - it starts a loop cycling through each address configured in bnetd.conf 
-    to listen on them and adds their sockets to the socket inspection list
-    - after this, it does a O(n) cycle where it populates the socket inspection list
-    with the sockets of every t_connection the server has (read availability)
-    - if any of this t_connections have packets in the outqueue (they need to 
-    send data) then the sockets are also added for write availability
-    - then pvpgn calls select()/poll() on the socket inspection list
-    - after the syscall returns, pvpgn cycles through each address configured
-    in bnetd.conf and checks if they are read available (if a new connection 
-    is to be made)
-    - pvpgn doesnt want to accept new connections when in shutdown phase but 
-    it did it the wrong way: it completly ignored the listening sockets if 
-    in shutdown phase, this made that once a connection was pending while in 
-    shutdown phase, select/poll imediatly returns because it has it in the read 
-    availability list and thus pvpgn was using 99% cpu while in shutdown phase
-    - anyway, after this, pvpgn does a O(n) cycle through each t_connection to 
-    check if its socket is read/write available
-    - problem is that when it was using poll() (the common case on Unices) to 
-    check if a socket was returned as read/write available by poll() it was 
-    using another O(n) function thus making the total cycle of O(n^2)
-    - while cycling through each connection to inspect if its socket was 
-    returned available by select/poll , pvpgn also checks if the connection 
-    is in destroy state (conn_state_destroy) and if so it destroys it
+## 3. The changed code flow:
 
-B. the code flow after fdwatch
-    - I have tried to get every bit of speed I could from the design, so some 
-    things while it may look complex they have the reason of speed behind
-    - just like the old code flow main calls server_process()
-    - here pvpgn does some single time initializations
-    - different than before, here, in the single time intializations code I also 
-    add the listening sockets to the fdwatch socket inspection list (also 
-    the code will need to update this list when receiving SIGHUP)
-    - then pvpgn enters main server loop
-    - the code first treats any received events (just like the old code)
-    - then it calls fdwatch() to inspect the sockets state
-    - then it calls conn_reap() to destroy the conn_state_destroy connections
-    - then it calls fdwatch_handle() to cycle through each ready socket and handle
-    its changed status
+### A. the code flow before fdwatch
+- main() calls server_process() 
+- server_process() after doing some single time initializations, entered the main loop
+- in the main loop after handing the events it starts to prepare the sockets for select/poll
+- it starts a loop cycling through each address configured in bnetd.conf to listen on them and adds their sockets to the socket inspection list
+- after this, it does a O(n) cycle where it populates the socket inspection list with the sockets of every t_connection the server has (read availability)
+- if any of this t_connections have packets in the outqueue (they need to send data) then the sockets are also added for write availability
+- then pvpgn calls select()/poll() on the socket inspection list
+- after the syscall returns, pvpgn cycles through each address configured in bnetd.conf and checks if they are read available (if a new connection is to be made)
+- pvpgn doesnt want to accept new connections when in shutdown phase but it did it the wrong way: it completly ignored the listening sockets if in shutdown phase, this made that once a connection was pending while in shutdown phase, select/poll imediatly returns because it has it in the read availability list and thus pvpgn was using 99% cpu while in shutdown phase
+- anyway, after this, pvpgn does a O(n) cycle through each t_connection to check if its socket is read/write available
+- problem is that when it was using poll() (the common case on Unices) to check if a socket was returned as read/write available by poll() it was using another O(n) function thus making the total cycle of O(n^2)
+- while cycling through each connection to inspect if its socket was returned available by select/poll , pvpgn also checks if the connection is in destroy state (conn_state_destroy) and if so it destroys it
+
+### B. the code flow after fdwatch
+- I have tried to get every bit of speed I could from the design, so some things while it may look complex they have the reason of speed behind
+- just like the old code flow main calls server_process()
+- here pvpgn does some single time initializations
+- different than before, here, in the single time intializations code I also add the listening sockets to the fdwatch socket inspection list (also the code will need to update this list when receiving SIGHUP)
+- then pvpgn enters main server loop
+- the code first treats any received events (just like the old code)
+- then it calls fdwatch() to inspect the sockets state
+- then it calls conn_reap() to destroy the conn_state_destroy connections 
+- then it calls fdwatch_handle() to cycle through each ready socket and handle its changed status
 
 This is it! :)
 No cycles, no O(n^2), not even a O(n) there (well in fact there is something 
 similar to a O(n) inside fdwatch() but about that read bellow).
 
-FAQ:
+## FAQ:
 1. Q: but where do the new connections get into the fdwatch inspection 
 list ? 
 A: they get in there when they are created, that means in the 
