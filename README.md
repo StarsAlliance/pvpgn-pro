@@ -61,7 +61,7 @@ Use [Magic Builder](https://github.com/pvpgn/pvpgn-magic-builder).
 
 Alternatively, use cmake to generate the .sln project and build it from Visual Studio.
 ```
-cmake -g "Visual Studio 17 2022" -H./ -B./build
+cmake -G "Visual Studio 18 2026" -H./ -B./build
 ```
 This will generate .sln in `build` directory.
 
